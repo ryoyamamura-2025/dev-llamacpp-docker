@@ -15,6 +15,7 @@ Cloud run でのデプロイを見越して Docker で環境を構築 。
 1. `docker build -t llama-fastapi-app:latest .` でビルド。 `bash restart-container.sh` でコンテナ起動。
     - マルチステージビルドで Docker イメージを軽量化 & Llama-cpp を動かすための C++ のコンパイラを最終的なイメージから分離
 2. `bash deploy.sh` でデプロイ
+3. ビルドし直した場合は `docker image prube -f` でタグの付いていないイメージを削除
 
 
 ### 参考
