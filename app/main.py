@@ -1,9 +1,12 @@
+import os
+from config import GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME, CREDENTIAL
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from llama_cpp import Llama
-import os
+
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
@@ -16,14 +19,10 @@ LOCAL_MODEL_DIR = "./models"
 LOCAL_MODEL_FILENAME = "model.gguf"
 LOCAL_MODEL_PATH = os.path.join(LOCAL_MODEL_DIR, LOCAL_MODEL_FILENAME)
 
-# GCSからモデル情報を取得するための環境変数
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
-GCS_MODEL_BLOB_NAME = os.getenv("GCS_MODEL_BLOB_NAME") 
-
 def download_model_from_gcs(bucket_name: str, source_blob_name: str, destination_file_name: str):
     """GCSからファイルをダウンロードする"""
     try:
-        storage_client = storage.Client()
+        storage_client = storage.Client.from_service_account_json(CREDENTIAL)
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(source_blob_name)
 
