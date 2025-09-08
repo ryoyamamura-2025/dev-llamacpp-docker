@@ -1,4 +1,23 @@
+# Llama-cpp and FastAPI Simple App
+Gemma を llama-cpp-python で動かして FastAPI で Web アプリ化し Cloud run にデプロイするプロジェクト
 
+## やりたいこと
+-  `.gguf` 形式のモデルを搭載し、
+- HTML/CSS/JavaScript で作られたフロントエンドを持ち、
+- FastAPI でサーブされ、Cloud run でホストされる
+Web アプリを作成する  
+
+⇒ OSS の LLM を組み込んだ Web アプリを作成する能力が身につく
+
+## 環境構築 & デプロイ
+Cloud run でのデプロイを見越して Docker で環境を構築 。
+
+1. `docker build -t llama-fastapi-app .` でビルド。 `bash restart-container.sh` でコンテナ起動。
+    - マルチステージビルドで Docker イメージを軽量化 & Llama-cpp を動かすための C++ のコンパイラを最終的なイメージから分離
+2. `bash deploy.sh` でデプロイ
+
+
+### 参考
 
 Gemma からのレスポンス
 ```
