@@ -1,5 +1,4 @@
 import os
-from config import GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME, CREDENTIAL
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -22,7 +21,7 @@ LOCAL_MODEL_PATH = os.path.join(LOCAL_MODEL_DIR, LOCAL_MODEL_FILENAME)
 def download_model_from_gcs(bucket_name: str, source_blob_name: str, destination_file_name: str):
     """GCSからファイルをダウンロードする"""
     try:
-        storage_client = storage.Client.from_service_account_json(CREDENTIAL)
+        storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(source_blob_name)
 
@@ -41,6 +40,8 @@ def download_model_from_gcs(bucket_name: str, source_blob_name: str, destination
 # ローカルにモデルファイルが存在しない場合、GCSからダウンロードを試みる
 if not os.path.exists(LOCAL_MODEL_PATH):
     print(f"Model not found locally at {LOCAL_MODEL_PATH}.")
+    GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
+    GCS_MODEL_BLOB_NAME = os.environ.get("GCS_MODEL_BLOB_NAME")
     if GCS_BUCKET_NAME and GCS_MODEL_BLOB_NAME:
         download_model_from_gcs(GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME, LOCAL_MODEL_PATH)
     else:
@@ -48,7 +49,7 @@ if not os.path.exists(LOCAL_MODEL_PATH):
             f"Model file not found at {LOCAL_MODEL_PATH} and GCS environment variables "
             "(GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME) are not set."
         )
-
+    
 # モデルをメモリにロード
 print(f"Loading model from {LOCAL_MODEL_PATH}...")
 llm = Llama(

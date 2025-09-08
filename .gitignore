@@ -1,6 +1,7 @@
 deploy.sh
 *.gguf
-config.py
+.env.yaml
+.env.yaml.local
 credentials.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
