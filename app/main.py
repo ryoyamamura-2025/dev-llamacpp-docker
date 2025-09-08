@@ -4,26 +4,61 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from llama_cpp import Llama
 import os
+from google.cloud import storage
+from google.api_core.exceptions import NotFound
 
 # --- FastAPIアプリの初期化 ---
 app = FastAPI()
 
 # --- モデルの読み込み ---
-model_path = "./models/gemma-3-270m-it-Q4_K_M.gguf"
+# ローカルに保存するモデルのパス
+LOCAL_MODEL_DIR = "./models"
+LOCAL_MODEL_FILENAME = "model.gguf"
+LOCAL_MODEL_PATH = os.path.join(LOCAL_MODEL_DIR, LOCAL_MODEL_FILENAME)
 
-if not os.path.exists(model_path):
-    raise FileNotFoundError(
-        f"Model file not found at {model_path}. "
-        "Make sure you have downloaded the model and mounted the 'models' directory correctly."
-    )
+# GCSからモデル情報を取得するための環境変数
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
+GCS_MODEL_BLOB_NAME = os.getenv("GCS_MODEL_BLOB_NAME") 
+
+def download_model_from_gcs(bucket_name: str, source_blob_name: str, destination_file_name: str):
+    """GCSからファイルをダウンロードする"""
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(source_blob_name)
+
+        print(f"Downloading model from gs://{bucket_name}/{source_blob_name} to {destination_file_name}...")
+        
+        # 保存先ディレクトリが存在しない場合は作成
+        os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
+        
+        blob.download_to_filename(destination_file_name)
+        print("Model downloaded successfully.")
+    except NotFound:
+        raise FileNotFoundError(f"Model file not found in GCS: gs://{bucket_name}/{source_blob_name}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to download model from GCS: {e}")
+
+# ローカルにモデルファイルが存在しない場合、GCSからダウンロードを試みる
+if not os.path.exists(LOCAL_MODEL_PATH):
+    print(f"Model not found locally at {LOCAL_MODEL_PATH}.")
+    if GCS_BUCKET_NAME and GCS_MODEL_BLOB_NAME:
+        download_model_from_gcs(GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME, LOCAL_MODEL_PATH)
+    else:
+        raise FileNotFoundError(
+            f"Model file not found at {LOCAL_MODEL_PATH} and GCS environment variables "
+            "(GCS_BUCKET_NAME, GCS_MODEL_BLOB_NAME) are not set."
+        )
 
 # モデルをメモリにロード
+print(f"Loading model from {LOCAL_MODEL_PATH}...")
 llm = Llama(
-    model_path=model_path,
+    model_path=LOCAL_MODEL_PATH,
     n_gpu_layers=0,   # GPUにオフロードするレイヤー数 (-1は全て。今回はCPUなので0)
     n_ctx=2048,       # コンテキストサイズ
     verbose=False     # 冗長なログを無効化
 )
+print("Model loaded successfully.")
 
 # --- APIのリクエストボディの定義 ---
 class PromptRequest(BaseModel):
