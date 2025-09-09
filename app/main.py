@@ -21,7 +21,7 @@ LOCAL_MODEL_PATH = os.path.join(LOCAL_MODEL_DIR, LOCAL_MODEL_FILENAME)
 def download_model_from_gcs(bucket_name: str, source_blob_name: str, destination_file_name: str):
     """GCSからファイルをダウンロードする"""
     try:
-        storage_client = storage.Client()
+        storage_client = storage.Client() # Fallback to default credentials (e.g., ADC)
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(source_blob_name)
 
